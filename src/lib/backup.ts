@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { calculateQuote, validateQuoteInput, validateSettings } from "./pricing";
 import {
-  FORMULA_VERSION,
+  SUPPORTED_FORMULA_VERSIONS,
   type BackupData,
   type SavedCalculation,
   type StudioSettings,
@@ -49,7 +49,7 @@ const inputSchema = z.object({
 });
 
 const resultSchema = z.object({
-  formulaVersion: z.literal(FORMULA_VERSION),
+  formulaVersion: z.enum(SUPPORTED_FORMULA_VERSIONS),
   modelGrams: nonnegative,
   additionalGrams: nonnegative,
   totalGrams: nonnegative,
@@ -86,7 +86,7 @@ export const savedCalculationSchema = z.object({
     context.addIssue({ code: "custom", path: ["updatedAt"], message: "Updated time cannot precede creation time." });
   }
   try {
-    const computed = calculateQuote(calculation.input, calculation.settings);
+    const computed = calculateQuote(calculation.input, calculation.settings, calculation.result.formulaVersion);
     for (const key of Object.keys(computed) as Array<keyof typeof computed>) {
       const expected = computed[key];
       const actual = calculation.result[key];

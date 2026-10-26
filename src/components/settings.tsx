@@ -17,7 +17,6 @@ function settingValues(settings: StudioSettings): SettingValues {
 const fields: Array<{ key: SettingKey; label: string; unit: string; step: string; description?: string }> = [
   { key: "filamentRate", label: "Filament rate", unit: "RM / gram", step: "0.001", description: "Applies to model, flushed, support, brim, and prime tower filament." },
   { key: "printingHourlyRate", label: "Printing rate", unit: "RM / hour", step: "0.01" },
-  { key: "changingHourlyRate", label: "Filament-changing rate", unit: "RM / hour", step: "0.01", description: "Charged separately from the Creality Print 7 printing estimate." },
   { key: "keyringCost", label: "Keyring + jump ring", unit: "RM / keychain", step: "0.01" },
   { key: "packagingCost", label: "Packaging plastic", unit: "RM / keychain", step: "0.01" },
   { key: "laborCost", label: "Labor", unit: "RM / keychain", step: "0.01" },
@@ -105,7 +104,7 @@ function SettingsForm({ initial }: { initial: StudioSettings }) {
         <div className="settings-grid">
           <section className="card" aria-labelledby="material-rates-title">
             <div className="card-header"><div className="section-title"><Spool size={20} aria-hidden="true" /><h2 id="material-rates-title">Material & machine</h2></div><span className="eyebrow">VARIABLE COSTS</span></div>
-            <div className="card-body form-stack">{renderField("filamentRate")}<div className="input-grid">{renderField("printingHourlyRate")}{renderField("changingHourlyRate")}</div><p className="muted small"><Clock3 size={15} aria-hidden="true" /> Printing and filament-changing time are calculated separately.</p></div>
+            <div className="card-body form-stack">{renderField("filamentRate")}{renderField("printingHourlyRate")}<p className="muted small"><Clock3 size={15} aria-hidden="true" /> Machine cost is based on the printing time you enter.</p></div>
           </section>
           <section className="card" aria-labelledby="fixed-costs-title">
             <div className="card-header"><div className="section-title"><Package size={20} aria-hidden="true" /><h2 id="fixed-costs-title">Fixed production costs</h2></div><span className="eyebrow">PER KEYCHAIN</span></div>
@@ -117,7 +116,7 @@ function SettingsForm({ initial }: { initial: StudioSettings }) {
           </section>
           <section className="card" aria-labelledby="defaults-title">
             <div className="card-header"><div className="section-title"><CircleHelp size={20} aria-hidden="true" /><h2 id="defaults-title">Official pricing defaults</h2></div></div>
-            <div className="card-body form-stack"><div className="settings-reference"><p><span>Filament</span><strong>RM0.085 / g</strong></p><p><span>Printing & changing</span><strong>RM3.00 / h each</strong></p><p><span>Fixed costs combined</span><strong>RM0.68 / keychain</strong></p><p><span>Markup & rounding</span><strong>50% · upward RM0.50</strong></p><p><span>Design fees</span><strong>RM0 / RM5 / RM10</strong></p></div><p className="muted small">Designing fees are added after profit. There are no quantity tiers or volume discounts.</p></div>
+            <div className="card-body form-stack"><div className="settings-reference"><p><span>Filament</span><strong>RM0.085 / g</strong></p><p><span>Printing</span><strong>RM3.00 / h</strong></p><p><span>Fixed costs combined</span><strong>RM0.68 / keychain</strong></p><p><span>Markup & rounding</span><strong>50% · upward RM0.50</strong></p><p><span>Design fees</span><strong>RM0 / RM5 / RM10</strong></p></div><p className="muted small">Designing fees are added after profit. There are no quantity tiers or volume discounts.</p></div>
           </section>
         </div>
         {failure && <p className="error-banner" role="alert">{failure}</p>}

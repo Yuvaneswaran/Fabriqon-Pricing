@@ -1,10 +1,13 @@
-export const FORMULA_VERSION = "keychain-v1" as const;
+export const SUPPORTED_FORMULA_VERSIONS = ["keychain-v1", "keychain-v2"] as const;
+export type PricingFormulaVersion = typeof SUPPORTED_FORMULA_VERSIONS[number];
+export const FORMULA_VERSION = "keychain-v2" as const;
 export type PrintingType = "single" | "multi";
 export type DesignType = "existing" | "simple" | "complex";
 export interface FilamentColor { name: string; grams: number }
 export interface StudioSettings {
   filamentRate: number;
   printingHourlyRate: number;
+  /** @deprecated Retained only for original keychain-v1 pricing snapshots. */
   changingHourlyRate: number;
   keyringCost: number;
   packagingCost: number;
@@ -17,7 +20,9 @@ export interface QuoteInput {
   colors: FilamentColor[];
   printingHours: number;
   printingMinutes: number;
+  /** @deprecated Retained for original snapshots; ignored by keychain-v2. */
   changingHours: number;
+  /** @deprecated Retained for original snapshots; ignored by keychain-v2. */
   changingMinutes: number;
   flushGrams: number;
   supportGrams: number;
@@ -27,7 +32,7 @@ export interface QuoteInput {
 }
 /** RM amounts retain full intermediate precision; format only at presentation. */
 export interface QuoteResult {
-  formulaVersion: typeof FORMULA_VERSION;
+  formulaVersion: PricingFormulaVersion;
   modelGrams: number;
   additionalGrams: number;
   totalGrams: number;

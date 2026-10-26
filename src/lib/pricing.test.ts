@@ -64,17 +64,41 @@ describe("finalized one-keychain pricing", () => {
     expect(result.filamentCost).toBe(1.9635);
   });
 
-  it("charges printing and filament-changing times at their respective rates", () => {
+  it("preserves printing and filament-changing costs in historical v1 snapshots", () => {
     const result = calculateQuote(input({
       printingHours: 1, printingMinutes: 30,
       changingHours: 0, changingMinutes: 20,
-    }), settings({ changingHourlyRate: 6 }));
+    }), settings({ changingHourlyRate: 6 }), "keychain-v1");
+    expect(result.formulaVersion).toBe("keychain-v1");
     expect(result.printingTimeHours).toBe(1.5);
     expect(result.changingTimeHours).toBeCloseTo(1 / 3, 14);
     expect(result.totalMachineMinutes).toBe(110);
     expect(result.printingCost).toBe(4.5);
     expect(result.changingCost).toBe(2);
     expect(result.machineCost).toBe(6.5);
+  });
+
+  it("charges only printing time for new calculations even when legacy changing inputs remain", () => {
+    const originalInput = input({ printingHours: 1, printingMinutes: 30, changingHours: 3, changingMinutes: 20 });
+    const result = calculateQuote(originalInput, settings({ changingHourlyRate: 6 }));
+    expect(result.formulaVersion).toBe("keychain-v2");
+    expect(result.printingCost).toBe(4.5);
+    expect(result.changingTimeHours).toBe(0);
+    expect(result.changingCost).toBe(0);
+    expect(result.totalMachineMinutes).toBe(90);
+    expect(result.machineCost).toBe(4.5);
+    expect(result).toEqual(calculateQuote({ ...originalInput, changingHours: 0, changingMinutes: 0 }, settings({ changingHourlyRate: 0 })));
+    expect(originalInput.changingHours).toBe(3);
+  });
+
+  it("recalculates an old snapshot under current pricing without changing the original snapshot", () => {
+    const originalInput = input({ colors: [{ name: "Blue", grams: 8 }], printingHours: 1, printingMinutes: 30, changingMinutes: 45 });
+    const historical = calculateQuote(originalInput, settings(), "keychain-v1");
+    const current = calculateQuote(originalInput, settings());
+    expect(historical.finalPrice).toBe(12.5);
+    expect(current.finalPrice).toBe(9);
+    expect(historical.changingCost).toBe(2.25);
+    expect(current.changingCost).toBe(0);
   });
 
   it("retains the full cost and markup precision before the final rounding", () => {
@@ -134,14 +158,14 @@ describe("finalized one-keychain pricing", () => {
   it("cancels recurring minute fractions exactly before final ceiling", () => {
     const result = calculateQuote(input({ printingMinutes: 1, changingMinutes: 59 }), {
       ...ZERO_COSTS, printingHourlyRate: 0.01, changingHourlyRate: 0.01, roundingIncrement: 0.01,
-    });
+    }, "keychain-v1");
     expect(result.machineCost).toBe(0.01);
     expect(result.finalPrice).toBe(0.01);
     expect(result.roundingAdjustment).toBe(0);
   });
 
-  it("still includes additional weights and manually entered changing time in single-color mode", () => {
-    const result = calculateQuote(input({ flushGrams: 2, primeTowerGrams: 3, changingMinutes: 2 }), settings());
+  it("preserves additional weights and changing time in legacy single-color snapshots", () => {
+    const result = calculateQuote(input({ flushGrams: 2, primeTowerGrams: 3, changingMinutes: 2 }), settings(), "keychain-v1");
     expect(result.additionalGrams).toBe(5);
     expect(result.changingCost).toBe(0.1);
   });

@@ -18,11 +18,12 @@ export function SavedDetail({ id }: { id: string }) {
   if (!record) return <div className="card empty-state p-12 text-center"><FileText className="mx-auto mb-4 text-slate-500" size={36} /><h1 className="mb-2 text-xl font-semibold">Calculation not found</h1><p className="muted mb-6">It may have been deleted, or saved in a different browser.</p><Link href="/history" className="btn btn-primary"><ArrowLeft size={16} /> Back to history</Link></div>;
 
   const { input, settings, result } = record;
+  const hasLegacyChangingTime = result.formulaVersion === "keychain-v1" && (input.changingHours > 0 || input.changingMinutes > 0);
   const design = DESIGN_OPTIONS.find(option => option.value === input.designType);
   const rateRows: [string, string][] = [
     ["Filament / gram", `RM ${settings.filamentRate.toLocaleString("en-MY", { minimumFractionDigits: 3, maximumFractionDigits: 10 })}`],
     ["Printing / hour", money(settings.printingHourlyRate)],
-    ["Filament-changing / hour", money(settings.changingHourlyRate)],
+    ...(hasLegacyChangingTime ? [["Filament-changing / hour", money(settings.changingHourlyRate)] as [string, string]] : []),
     ["Keyring + jump ring", money(settings.keyringCost)],
     ["Packaging plastic", money(settings.packagingCost)],
     ["Labor", money(settings.laborCost)],
@@ -48,8 +49,8 @@ export function SavedDetail({ id }: { id: string }) {
           </div>
         </section>
         <section className="card">
-          <div className="card-header"><span className="section-icon"><Timer size={18} /></span><div><h2>Machine time & design</h2><p className="muted text-xs">Printing and filament-changing time are charged separately</p></div></div>
-          <div className="card-body"><dl><DetailRow label="Printing time" value={machineTime(input.printingHours * 60 + input.printingMinutes)} /><DetailRow label="Filament-changing time" value={machineTime(input.changingHours * 60 + input.changingMinutes)} /><DetailRow label="Combined machine time" value={machineTime(result.totalMachineMinutes)} strong /><DetailRow label="Designing option" value={design?.label ?? input.designType} /><DetailRow label="Designing fee" value={money(result.designingFee)} /></dl>
+          <div className="card-header"><span className="section-icon"><Timer size={18} /></span><div><h2>Machine time & design</h2><p className="muted text-xs">Original saved machine time and designing fee</p></div></div>
+          <div className="card-body"><dl><DetailRow label="Printing time" value={machineTime(input.printingHours * 60 + input.printingMinutes)} />{hasLegacyChangingTime && <DetailRow label="Filament-changing time" value={machineTime(input.changingHours * 60 + input.changingMinutes)} />}<DetailRow label={hasLegacyChangingTime ? "Combined machine time" : "Total printing time"} value={machineTime(result.totalMachineMinutes)} strong /><DetailRow label="Designing option" value={design?.label ?? input.designType} /><DetailRow label="Designing fee" value={money(result.designingFee)} /></dl>
           {record.notes && <div className="mt-5 border-t border-slate-600/60 pt-4"><h3 className="mb-2 text-sm font-semibold">Notes</h3><p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-400">{record.notes}</p></div>}</div>
         </section>
         <section className="card">
@@ -64,7 +65,7 @@ export function SavedDetail({ id }: { id: string }) {
           <DetailRow label="Additional filament cost" value={money(result.additionalFilamentCost)} />
           <DetailRow label={`Total filament · ${grams(result.totalGrams)}`} value={money(result.filamentCost)} strong />
           <DetailRow label="Printing time cost" value={money(result.printingCost)} />
-          <DetailRow label="Filament-changing time cost" value={money(result.changingCost)} />
+          {hasLegacyChangingTime && <DetailRow label="Filament-changing time cost" value={money(result.changingCost)} />}
           <DetailRow label={`Total machine · ${machineTime(result.totalMachineMinutes)}`} value={money(result.machineCost)} strong />
           <DetailRow label="Keyring + jump ring" value={money(settings.keyringCost)} />
           <DetailRow label="Packaging plastic" value={money(settings.packagingCost)} />

@@ -115,14 +115,9 @@ input[type=number] { -moz-appearance: textfield; }
 .material-total { display: flex; gap: 12px; align-items: center; padding: 11px 14px; background: #15243A; border: 1px solid #344962; border-radius: 7px; font-size: 11px; color: #ABBBD3; }
 .material-total > strong { color: #E2E8F0; font-weight: 500; font-variant-numeric: tabular-nums; }
 .rate-note { margin-left: auto; color: #8097B9; font-size: 10px; }
-.time-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; }
-.time-columns > div + div { border-left: 1px solid #3D4B60; padding-left: 25px; }
 .time-heading { display: flex; flex-direction: column; gap: 4px; margin-bottom: 15px; }
 .time-heading .label { color: #DEE6F2; font-size: 12px; }
 .time-heading .small { font-size: 10px; }
-.time-columns .input-grid { gap: 10px; }
-.time-columns .field > .label { font-size: 10px; color: #8D9FB8; }
-.time-columns .input { padding-left: 11px; }
 .input-note { display: flex; align-items: flex-start; gap: 9px; font-size: 10px; color: #8FA4C4; padding: 11px 13px; background: #3B82F60B; border: 1px solid #3B82F61C; border-radius: 7px; line-height: 1.6; }
 .input-note > svg { color: #619DF8; margin-top: 1px; }
 .additional-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 19px 18px; }
@@ -239,8 +234,6 @@ input[type=number] { -moz-appearance: textfield; }
   .calculator-layout { grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: 20px; }
   .printing-type-row { flex-direction: column; align-items: stretch; gap: 15px; }
   .segmented > button { flex: 1; }
-  .time-columns { gap: 16px; }
-  .time-columns > div + div { padding-left: 16px; }
   .card-body { padding: 20px; }
   .settings-grid .card-header .eyebrow { display: none; }
 }
@@ -293,10 +286,7 @@ input[type=number] { -moz-appearance: textfield; }
   .color-input-row .label { min-height: 32px; }
   .material-total { flex-wrap: wrap; gap: 6px 12px; padding: 11px; font-size: 10px; }
   .material-total .rate-note { font-size: 9px; }
-  .time-columns { grid-template-columns: minmax(0,1fr); gap: 22px; }
-  .time-columns > div + div { padding-left: 0; padding-top: 18px; border-left: none; border-top: 1px solid #3D4B60; }
   .time-heading { flex-direction: row; justify-content: space-between; margin-bottom: 12px; }
-  .time-columns .field > .label { font-size: 11px; }
   .input-note { font-size: 10px; }
   .additional-grid { gap: 17px 12px; }
   .additional-grid .label { font-size: 10px; }

@@ -1,6 +1,6 @@
 # Finalized keychain pricing
 
-Formula version: **`keychain-v1`**. All currency amounts are in **Malaysian ringgit (RM)**. One calculation represents **one keychain**; no quantities, volume discounts, tax, or order-level calculations are applied.
+Current formula version: **`keychain-v2`**. Machine operation charges use **printing time only**. The filament-changing controls and charge were removed at the owner's request; older `keychain-v1` snapshots remain supported for history and backup compatibility. All currency amounts are in **Malaysian ringgit (RM)**. One calculation represents **one keychain**; no quantities, volume discounts, tax, or order-level calculations are applied.
 
 ## Official defaults
 
@@ -8,7 +8,6 @@ Formula version: **`keychain-v1`**. All currency amounts are in **Malaysian ring
 | --- | ---: | --- |
 | Filament rate | RM0.085 / g | All model and additional filament |
 | Printing hourly rate | RM3.00 / h | Printing time |
-| Filament-changing hourly rate | RM3.00 / h | Additional filament-changing time |
 | Keyring and jump ring | RM0.15 | One keychain |
 | Packaging plastic | RM0.03 | One keychain |
 | Labor | RM0.50 | One keychain |
@@ -35,10 +34,8 @@ total grams      = model grams + additional grams
 filament cost = total grams × filament rate
 
 printing hours = entered printing hours + entered printing minutes / 60
-changing hours = entered changing hours + entered changing minutes / 60
 printing cost  = printing hours × printing hourly rate
-changing cost  = changing hours × changing hourly rate
-machine cost   = printing cost + changing cost
+machine cost   = printing cost
 
 fixed cost      = keyring cost + packaging cost + labor cost
 production cost = filament cost + machine cost + fixed cost
@@ -51,18 +48,17 @@ final price     = ceil(unrounded price / rounding increment) × rounding increme
 
 The markup is a percentage of production cost, not a target selling-price margin. The designing fee is added **after** that markup. The upward rounding adjustment is reported separately; the displayed profit component is the configured production-cost markup.
 
-Enter the printing estimate and the additional filament-changing time as separate values. Both are charged. All additional filament categories are included in either printing mode. Selecting single-color mode in the interface keeps one color and clears changing time; any subsequently entered changing time is still charged. Enter each filament category once to avoid counting the same grams twice.
+Enter the printing time in hours and minutes. There is no separate filament-changing time or rate in the calculator or settings. New calculations charge printing time only, including when editing or duplicating an older record. All additional filament categories remain included in either printing mode. Enter each filament category once to avoid counting the same grams twice.
 
 ## Official example
 
-Inputs: 20 g model filament, 2 g flushed filament, 1 g support, 1 g brim, no prime tower, 2 hours printing, no additional changing time, and a simple custom design. Use the official defaults.
+Inputs: 20 g model filament, 2 g flushed filament, 1 g support, 1 g brim, no prime tower, 2 hours printing, and a simple custom design. Use the official defaults.
 
 | Step | Calculation | Result |
 | --- | --- | ---: |
 | Total filament | 20 + 2 + 1 + 1 | 24 g |
 | Filament cost | 24 × RM0.085 | RM2.04 |
 | Printing cost | 2 × RM3.00 | RM6.00 |
-| Changing cost | 0 × RM3.00 | RM0.00 |
 | Fixed cost | RM0.15 + RM0.03 + RM0.50 | RM0.68 |
 | Production cost | RM2.04 + RM6.00 + RM0.68 | RM8.72 |
 | Profit markup | RM8.72 × 50% | RM4.36 |
@@ -95,6 +91,8 @@ For example, 1 g at RM0.085 plus the default RM0.68 fixed costs produces RM0.765
 
 Saving captures the complete inputs, settings, formula version, full calculated breakdown, name, notes, creation time, and update time. Changing global settings never silently recalculates an existing record.
 
+Existing `keychain-v1` records retain their original prices, including any historical filament-changing charge. Their historical detail views and JSON/CSV exports preserve those original values. New records use `keychain-v2`, which excludes filament-changing time even if deprecated fields are present. Editing or duplicating a legacy record clears that time and calculates its new price with printing time only; the interface explains the change. Opening a record does not overwrite it. **Update Existing Calculation** explicitly replaces the stored result with the new formula, while **Save as New Calculation** leaves the original snapshot intact.
+
 Editing and duplication start with the original rate snapshot. **Apply current rates** explicitly recalculates with the current settings. Updating an existing calculation preserves its ID and original creation time; saving as new or duplicating creates a separate record. Restoring default settings leaves saved snapshots unchanged.
 
 JSON import validates a saved result against its own inputs and rates with the versioned engine. Imports merge records without changing active settings. ID collisions are remapped rather than overwriting existing records.
@@ -109,4 +107,4 @@ npm run typecheck
 npm run build
 ```
 
-The pricing suite includes the RM18.50 example, multicolor and additional weights, distinct time rates, all design fees, zero inputs, custom rounding, exact increment boundaries, recurring-minute precision, and invalid or unsafe inputs. Storage and backup suites cover persistence, snapshot integrity, transactional imports, malformed backups, and CSV escaping.
+The pricing suite includes the RM18.50 example, multicolor and additional weights, printing-only operation costs, legacy snapshot compatibility, all design fees, zero inputs, custom rounding, exact increment boundaries, recurring-minute precision, and invalid or unsafe inputs. Storage and backup suites cover persistence, snapshot integrity, transactional imports, malformed backups, and CSV escaping.

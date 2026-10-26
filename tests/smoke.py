@@ -105,6 +105,9 @@ def run() -> None:
             visit(page, "/", "Custom Keychain Pricing")
             expect(page.get_by_label("Model filament weight", exact=True)).to_be_visible()
             wait_for_count(page, 0)
+            expect(page.get_by_label("Changing hours", exact=True)).to_have_count(0)
+            expect(page.get_by_label("Changing minutes", exact=True)).to_have_count(0)
+            expect(page.get_by_text("Changing time cost", exact=True)).to_have_count(0)
             price(page, "0.00")
             fill(page, "Model filament weight", "20")
             fill(page, "Printing hours", "2")
@@ -123,6 +126,9 @@ def run() -> None:
             wait_for_count(page, 1)
             original = snapshot(page)["records"][0]
             assert original["id"] == original_id
+            assert original["result"]["formulaVersion"] == "keychain-v2"
+            assert original["input"]["changingHours"] == 0 and original["input"]["changingMinutes"] == 0
+            assert original["result"]["changingCost"] == 0
             assert original["result"]["finalPrice"] == 18.5
             assert original["result"]["productionCost"] == 8.72
             assert original["result"]["profit"] == 4.36
@@ -163,7 +169,7 @@ def run() -> None:
             assert next(record for record in snapshot(page)["records"] if record["id"] == original_id) == edited
             completed.append("Editing preserves ID/creation date; Save as New creates independent record")
 
-            # Duplicate with dynamic multicolor inputs and separate changing minutes.
+            # Duplicate with dynamic multicolor inputs and printing-only machine cost.
             visit(page, "/history", "Calculation History")
             page.get_by_role("link", name="Duplicate AGHILA Revised Keychain", exact=True).click()
             expect(page.locator("#calculation-name")).to_have_value("AGHILA Revised Keychain (copy)")
@@ -178,10 +184,9 @@ def run() -> None:
             page.locator("#color-name-2").fill("White")
             fill(page, "Printing hours", "1")
             fill(page, "Printing minutes", "30")
-            fill(page, "Changing minutes", "45")
             fill(page, "Prime tower filament", "0.4")
             page.get_by_role("button", name=re.compile(r"Complex custom")).click()
-            price(page, "24.00")
+            price(page, "20.50")
             page.get_by_role("button", name="Save Calculation", exact=True).click()
             multi_id = saved_id(page)
             wait_for_count(page, 3)
@@ -189,11 +194,13 @@ def run() -> None:
             multi = next(record for record in current if record["id"] == multi_id)
             assert multi["result"]["modelGrams"] == 16.7
             assert multi["result"]["totalGrams"] == 21.1
-            assert multi["result"]["totalMachineMinutes"] == 135
-            assert multi["result"]["changingCost"] == 2.25
-            assert multi["result"]["finalPrice"] == 24
+            assert multi["result"]["totalMachineMinutes"] == 90
+            assert multi["result"]["changingCost"] == 0
+            assert multi["result"]["formulaVersion"] == "keychain-v2"
+            assert multi["result"]["machineCost"] == 4.5
+            assert multi["result"]["finalPrice"] == 20.5
             assert next(record for record in current if record["id"] == original_id) == edited
-            completed.append("Duplication preserves original; decimal multicolor weights and separate changing time")
+            completed.append("Duplication preserves original; decimal multicolor weights and printing-only machine cost")
 
             # Search, printing-type/date filters, and all sort modes.
             visit(page, "/history", "Calculation History")
@@ -229,6 +236,7 @@ def run() -> None:
 
             # Settings persist, while historical views/edits retain old rates until explicit opt-in.
             visit(page, "/settings", "Pricing Settings")
+            expect(page.locator("#setting-changingHourlyRate")).to_have_count(0)
             page.locator("#setting-filamentRate").fill("0.1")
             page.get_by_role("button", name="Save Settings", exact=True).click()
             expect(page.get_by_role("status").filter(has_text="Pricing settings saved")).to_be_visible()
@@ -345,6 +353,50 @@ def run() -> None:
             expect(page.get_by_text("Historical pricing settings", exact=True)).to_be_visible()
             no_horizontal_overflow(page)
             completed.append("Actual browser-restart persistence, mobile 375px layouts, touch controls, Restore Defaults")
+
+            # Import a genuine v1 formula snapshot with an original changing-time charge.
+            legacy = json.loads(json.dumps(original))
+            legacy["id"] = "legacy-v1-changing-time-acceptance"
+            legacy["name"] = "LEGACY Original Keychain"
+            legacy["input"]["changingMinutes"] = 45
+            legacy["result"].update({
+                "formulaVersion": "keychain-v1", "changingTimeHours": 0.75,
+                "totalMachineMinutes": 165, "changingCost": 2.25, "machineCost": 8.25,
+                "productionCost": 10.97, "profit": 5.485, "priceBeforeDesign": 16.455,
+                "unroundedPrice": 21.455, "finalPrice": 21.5, "roundingAdjustment": 0.045,
+            })
+            legacy_backup = {"version": 1, "exportedAt": original["createdAt"], "settings": original["settings"], "calculations": [legacy]}
+            visit(page, "/history", "Calculation History")
+            page.get_by_label("Choose JSON backup", exact=True).set_input_files({"name": "legacy-v1.json", "mimeType": "application/json", "buffer": json.dumps(legacy_backup).encode()})
+            wait_for_count(page, 6)
+            assert next(record for record in snapshot(page)["records"] if record["id"] == legacy["id"]) == legacy
+            visit(page, f"/history/{legacy['id']}", legacy["name"])
+            expect(page.get_by_text("RM21.50", exact=True).first).to_be_visible()
+            expect(page.get_by_text("Filament-changing time cost", exact=True)).to_be_visible()
+            no_horizontal_overflow(page)
+            page.get_by_role("link", name="Duplicate", exact=True).click()
+            expect(page.get_by_text("This copy uses printing time only. The original saved price stays in history.", exact=True)).to_be_visible()
+            expect(page.get_by_label("Changing minutes", exact=True)).to_have_count(0)
+            price(page, "18.50")
+            assert next(record for record in snapshot(page)["records"] if record["id"] == legacy["id"]) == legacy
+            wait_for_count(page, 6)
+            visit(page, f"/history/{legacy['id']}", legacy["name"])
+            page.get_by_role("link", name="Edit calculation", exact=True).click()
+            expect(page.get_by_text("This calculation includes an original filament-changing charge. This edit uses printing time only. Save to update its price, or save as new to keep the original.", exact=True)).to_be_visible()
+            expect(page.get_by_label("Changing minutes", exact=True)).to_have_count(0)
+            expect(page.get_by_label("Changing hours", exact=True)).to_have_count(0)
+            price(page, "18.50")
+            assert next(record for record in snapshot(page)["records"] if record["id"] == legacy["id"]) == legacy
+            page.get_by_role("button", name="Update Existing Calculation", exact=True).click()
+            expect(page.get_by_role("status").filter(has_text="Calculation updated")).to_be_visible()
+            migrated = next(record for record in snapshot(page)["records"] if record["id"] == legacy["id"])
+            assert migrated["id"] == legacy["id"] and migrated["createdAt"] == legacy["createdAt"]
+            assert migrated["input"]["changingHours"] == 0 and migrated["input"]["changingMinutes"] == 0
+            assert migrated["result"]["formulaVersion"] == "keychain-v2"
+            assert migrated["result"]["changingCost"] == 0 and migrated["result"]["totalMachineMinutes"] == 120
+            assert migrated["result"]["finalPrice"] == 18.5
+            wait_for_count(page, 6)
+            completed.append("Legacy v1 import/view preserves original charge; explicit edit migrates to printing-only v2")
             assert not page_errors, page_errors
             context.close()
 

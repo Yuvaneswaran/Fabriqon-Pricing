@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import { FORMULA_VERSION, type QuoteInput, type QuoteResult, type StudioSettings } from "./types";
+import { FORMULA_VERSION, type PricingFormulaVersion, type QuoteInput, type QuoteResult, type StudioSettings } from "./types";
 
 const MAX_WEIGHT_OR_RATE = 1_000_000;
 const MAX_HOURS = 100_000;
@@ -111,8 +111,12 @@ function roundUp(value: Fraction, increment: Fraction): Fraction {
   return multiply(fraction(BigInt(steps.toFixed(0))), increment);
 }
 
-/** Calculate the finalized price for ONE keychain, in Malaysian ringgit (RM). */
-export function calculateQuote(input: QuoteInput, settings: StudioSettings): QuoteResult {
+/**
+ * Calculate ONE keychain in RM. Current pricing charges printing time only.
+ * keychain-v1 is supported solely to validate and preserve historical snapshots.
+ */
+export function calculateQuote(input: QuoteInput, settings: StudioSettings, version: PricingFormulaVersion = FORMULA_VERSION): QuoteResult {
+  if (version !== "keychain-v1" && version !== "keychain-v2") throw new Error("Unsupported pricing formula version.");
   const errors = { ...validateQuoteInput(input), ...validateSettings(settings) };
   if (Object.keys(errors).length > 0) throw new Error(Object.values(errors)[0]);
 
@@ -125,7 +129,7 @@ export function calculateQuote(input: QuoteInput, settings: StudioSettings): Quo
   const filamentCost = add(modelFilamentCost, additionalFilamentCost);
 
   const printingMinutes = input.printingHours * 60 + input.printingMinutes;
-  const changingMinutes = input.changingHours * 60 + input.changingMinutes;
+  const changingMinutes = version === "keychain-v1" ? input.changingHours * 60 + input.changingMinutes : 0;
   const printingTime = fraction(BigInt(printingMinutes), 60n);
   const changingTime = fraction(BigInt(changingMinutes), 60n);
   const printingCost = multiply(printingTime, decimal(settings.printingHourlyRate));
@@ -141,7 +145,7 @@ export function calculateQuote(input: QuoteInput, settings: StudioSettings): Quo
   const roundingAdjustment = add(finalPrice, fraction(-unroundedPrice.numerator, unroundedPrice.denominator));
 
   const result: QuoteResult = {
-    formulaVersion: FORMULA_VERSION,
+    formulaVersion: version,
     modelGrams: asNumber(modelGrams),
     additionalGrams: asNumber(additionalGrams),
     totalGrams: asNumber(totalGrams),

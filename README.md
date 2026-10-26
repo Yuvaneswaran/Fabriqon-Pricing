@@ -28,7 +28,7 @@ npm run start
 
 1. Enter a calculation name. A nonempty name is required when saving.
 2. Select single-color or multicolor printing. Multicolor supports 2–64 colors, each with an optional name and an individual model weight.
-3. Enter printing time, additional filament-changing time, and any flushed, support, brim, and prime tower filament.
+3. Enter printing time and any flushed, support, brim, and prime tower filament. Machine cost uses printing time only.
 4. Choose an existing, simple custom, or complex custom design. The selling price and full cost breakdown update as inputs change.
 5. Save the calculation to its browser-local history. **Load example** fills the official sample, which produces **RM18.50 with the default settings**.
 
@@ -38,7 +38,7 @@ History supports name search, printing-type and saved-date filters, sorting, det
 
 ## Saved rates and browser storage
 
-IndexedDB stores settings and calculation records in the browser. Each saved calculation contains its inputs, rates, formula version, results, notes, and timestamps. Changing the current settings does not rewrite earlier results. When editing or duplicating a saved calculation, its original rates are retained until **Apply current rates** is selected.
+IndexedDB stores settings and calculation records in the browser. Each saved calculation contains its inputs, rates, formula version, results, notes, and timestamps. Changing the current settings does not rewrite earlier results. When editing or duplicating a saved calculation, its original rates are retained until **Apply current rates** is selected. New calculations use the printing-only `keychain-v2` formula. Earlier `keychain-v1` records keep their original results and remain importable; opening an old record for editing or duplication removes its former filament-changing charge from the new calculation. The original saved result changes only after an explicit update.
 
 Storage belongs to the exact browser origin: scheme, hostname, and port. Another browser profile, another device, a changed deployment hostname, or a different local port has a separate history. Clearing site data or leaving a private-browsing session can remove saved work. There is no server-side backup or automatic cloud synchronization. Export JSON backups regularly and before moving to another origin.
 

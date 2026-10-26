@@ -25,6 +25,38 @@ describe("JSON backups", () => {
     expect(Number.isNaN(Date.parse(backup.exportedAt))).toBe(false);
   });
 
+  it("preserves legacy nonzero changing costs alongside current printing-only records", () => {
+    const input = {
+      ...createQuoteInput(), colors: [{ name: "Model", grams: 20 }], flushGrams: 2,
+      supportGrams: 1, brimGrams: 1, printingHours: 2, changingMinutes: 45, designType: "simple" as const,
+    };
+    const result = calculateQuote(input, DEFAULT_SETTINGS, "keychain-v1");
+    expect(result).toEqual({
+      formulaVersion: "keychain-v1", modelGrams: 20, additionalGrams: 4, totalGrams: 24,
+      modelFilamentCost: 1.7, additionalFilamentCost: 0.34, filamentCost: 2.04,
+      printingTimeHours: 2, changingTimeHours: 0.75, totalMachineMinutes: 165,
+      printingCost: 6, changingCost: 2.25, machineCost: 8.25, fixedCost: 0.68,
+      productionCost: 10.97, profit: 5.485, priceBeforeDesign: 16.455,
+      designingFee: 5, unroundedPrice: 21.455, finalPrice: 21.5, roundingAdjustment: 0.045,
+    });
+    const legacy = fixture({ input, result });
+    const current = fixture({ id: "quote-current", input, result: calculateQuote(input, DEFAULT_SETTINGS) });
+    const backup = parseBackup(serializeBackup(DEFAULT_SETTINGS, [legacy, current]));
+    expect(backup.calculations).toEqual([legacy, current]);
+    expect(backup.calculations[0].result.finalPrice).toBe(21.5);
+    expect(backup.calculations[1].result.finalPrice).toBe(18.5);
+    expect(serializeCSV(backup.calculations)).toContain('"keychain-v1"');
+    expect(serializeCSV(backup.calculations)).toContain('"keychain-v2"');
+  });
+
+  it("rejects changing a legacy snapshot's formula version without recalculating its results", () => {
+    const input = { ...createQuoteInput(), printingHours: 1, changingMinutes: 45 };
+    const legacy = fixture({ input, result: calculateQuote(input, DEFAULT_SETTINGS, "keychain-v1") });
+    const backup = JSON.parse(serializeBackup(DEFAULT_SETTINGS, [legacy]));
+    backup.calculations[0].result.formulaVersion = "keychain-v2";
+    expect(() => parseBackup(JSON.stringify(backup))).toThrow("Saved result does not match");
+  });
+
   it("allows an empty backup without inventing a calculation", () => {
     expect(parseBackup(serializeBackup(DEFAULT_SETTINGS, [])).calculations).toEqual([]);
   });
